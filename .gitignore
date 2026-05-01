@@ -1,0 +1,45 @@
+# ── Node / npm ──────────────────────────────────────────
+node_modules/
+npm-debug.log*
+.npm
+
+# ── Next.js ─────────────────────────────────────────────
+frontend/.next/
+frontend/out/
+
+# ── Dist (compiled TypeScript) ──────────────────────────
+services/*/dist/
+
+# ── Environment variables ────────────────────────────────
+.env
+.env.local
+.env.*.local
+# Keep .env.example committed
+!.env.example
+# Keep service .env files OUT (they contain API keys)
+services/*/.env
+
+# ── Logs ────────────────────────────────────────────────
+*.log
+logs/
+
+# ── OS ──────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── IDE ─────────────────────────────────────────────────
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# ── Docker volumes (local) ───────────────────────────────
+postgres-data/
+redis-data/
+
+# ── Misc ─────────────────────────────────────────────────
+*.tgz
+.turbo/

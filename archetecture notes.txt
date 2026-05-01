@@ -1,0 +1,268 @@
+# 🚀 Build OTOwire-Lite – Cloud + DevOps Project
+
+## 🧠 Context
+
+You are building **OTOwire-Lite**, a cloud-native OTT aggregation platform.
+
+This is a **Stage 2 inspired MVP** of OTO, where:
+
+* Users can search content across OTT platforms
+* View metadata (ratings, description, availability)
+* Click and **redirect to the original OTT platform**
+* For YouTube content → redirect directly to the video
+
+⚠️ IMPORTANT:
+
+* NO actual video embedding from Netflix/Prime (legal constraint)
+* ONLY redirection-based playback
+
+This aligns with the Stage 2 concept of unified experience without violating platform policies.
+
+---
+
+## 🎯 Goal
+
+Build a **production-ready cloud-native system** that demonstrates:
+
+* DevOps practices (CI/CD, containers, automation)
+* Cloud architecture (scalable deployment)
+* Microservices communication
+* Observability & monitoring
+
+---
+
+## 🚧 STRICT SCOPE
+
+### ✅ Build ONLY:
+
+* Authentication system (JWT)
+* Content aggregation (mock APIs or scraped dataset)
+* Search system
+* Watchlist system
+* Redirect system (OTT / YouTube)
+* Basic recommendation (rule-based)
+
+### ❌ DO NOT BUILD:
+
+* Real OTT integrations (Netflix APIs etc.)
+* AI recommendation engine
+* Payment system
+* Complex ML pipelines
+
+---
+
+## 🏗️ Tech Stack (MANDATORY)
+
+### Frontend:
+
+* Next.js (App Router)
+* Tailwind CSS
+* Axios
+
+### Backend (Microservices):
+
+* Node.js + TypeScript
+* Express
+
+Services:
+
+* Auth Service
+* Content Service
+* Search Service
+* Watchlist Service
+* Redirect Service
+
+### Database:
+
+* PostgreSQL (main data)
+* Redis (caching search results)
+
+---
+
+## ☁️ Cloud Architecture (VERY IMPORTANT)
+
+Deploy on AWS (or GCP equivalent):
+
+* EC2 / GKE → app hosting
+* S3 → store thumbnails/images
+* RDS → PostgreSQL
+* CloudFront → CDN
+* API Gateway → entry point
+* Load Balancer → traffic distribution
+
+---
+
+## 🐳 DevOps Stack
+
+* Docker → containerize all services
+* Kubernetes → orchestration
+* GitHub Actions → CI/CD pipeline
+* NGINX → reverse proxy
+* Prometheus → metrics
+* Grafana → dashboards
+
+---
+
+## 🔄 CI/CD Pipeline
+
+Implement:
+
+1. Code push → GitHub
+2. Run tests
+3. Build Docker images
+4. Push to registry
+5. Deploy to Kubernetes cluster
+
+---
+
+## 📂 Folder Structure
+
+oto/
+├── frontend/
+├── services/
+│   ├── auth-service/
+│   ├── content-service/
+│   ├── search-service/
+│   ├── watchlist-service/
+│   ├── redirect-service/
+├── infra/
+│   ├── docker/
+│   ├── k8s/
+│   ├── terraform/ (optional)
+├── docs/
+
+---
+
+## 🔌 API Design
+
+### Auth:
+
+POST /auth/signup
+POST /auth/login
+
+### Content:
+
+GET /content
+GET /content/:id
+
+### Search:
+
+GET /search?q=movie_name
+
+### Watchlist:
+
+POST /watchlist
+GET /watchlist
+
+### Redirect:
+
+GET /redirect/:content_id
+
+Logic:
+
+* If platform = Netflix → redirect to Netflix URL
+* If platform = YouTube → redirect to video link
+
+---
+
+## 🗄️ Database Schema
+
+Users:
+
+* id
+* email
+* password
+
+Content:
+
+* id
+* title
+* platform
+* genre
+* rating
+* redirect_url
+
+Watchlist:
+
+* id
+* user_id
+* content_id
+
+---
+
+## 🔍 Core Features
+
+### 1. Unified Search
+
+* Search across all platforms
+
+### 2. Content Page
+
+* Title, rating, description
+* Platform info
+
+### 3. Redirect System
+
+* Smart routing to OTT / YouTube
+
+### 4. Watchlist
+
+* Save content across platforms
+
+---
+
+## 📊 Observability
+
+* Track API latency
+* Track request counts
+* Monitor errors
+
+Use:
+
+* Prometheus
+* Grafana dashboards
+
+---
+
+## ⚙️ Deployment Strategy
+
+* Each service runs in its own container
+* Deploy using Kubernetes
+* Use LoadBalancer service
+* Enable autoscaling (HPA)
+
+---
+
+## 🧠 Important Rules
+
+* Keep services modular
+* Do NOT over-engineer business logic
+* Focus on infra + DevOps
+* Ensure system runs end-to-end
+
+---
+
+## 🚀 Output Expectations
+
+Generate:
+
+1. Full microservices backend
+2. Frontend UI (basic)
+3. Dockerfiles for each service
+4. Kubernetes manifests
+5. CI/CD pipeline config
+6. Monitoring setup
+
+---
+
+## 🔥 Final Instruction
+
+This is NOT just a web app.
+
+This is a:
+
+👉 Cloud-native
+👉 DevOps-driven
+👉 Microservices-based system
+
+Build it like a **real scalable platform**, even if data is mock.
