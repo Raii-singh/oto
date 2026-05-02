@@ -1,0 +1,68 @@
+{
+  "title": "OTOwire-Lite — Services Overview",
+  "uid": "oto-services",
+  "version": 1,
+  "schemaVersion": 38,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    {
+      "id": 1, "type": "stat", "title": "Content Service — Total Requests",
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+      "targets": [{ "expr": "sum(oto_content_requests_total)", "legendFormat": "Total" }],
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "unit": "short" } }
+    },
+    {
+      "id": 2, "type": "stat", "title": "Cache Hit Rate",
+      "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 },
+      "targets": [{
+        "expr": "sum(oto_content_cache_hits_total) / sum(oto_content_requests_total) * 100",
+        "legendFormat": "Hit Rate %"
+      }],
+      "fieldConfig": { "defaults": { "unit": "percent", "max": 100, "color": { "mode": "thresholds" },
+        "thresholds": { "steps": [{ "color": "red", "value": 0 }, { "color": "yellow", "value": 50 }, { "color": "green", "value": 80 }] }
+      }}
+    },
+    {
+      "id": 3, "type": "stat", "title": "Auth Service — Requests",
+      "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 },
+      "targets": [{ "expr": "sum(oto_auth_requests_total)", "legendFormat": "Total" }],
+      "fieldConfig": { "defaults": { "unit": "short" } }
+    },
+    {
+      "id": 4, "type": "stat", "title": "Watchlist Service — Requests",
+      "gridPos": { "x": 18, "y": 0, "w": 6, "h": 4 },
+      "targets": [{ "expr": "sum(oto_watchlist_requests_total)", "legendFormat": "Total" }],
+      "fieldConfig": { "defaults": { "unit": "short" } }
+    },
+    {
+      "id": 5, "type": "timeseries", "title": "API Latency — p50 / p95 / p99",
+      "gridPos": { "x": 0, "y": 4, "w": 24, "h": 8 },
+      "targets": [
+        { "expr": "histogram_quantile(0.50, sum(rate(oto_content_request_duration_seconds_bucket[5m])) by (le, route))", "legendFormat": "p50 - {{route}}" },
+        { "expr": "histogram_quantile(0.95, sum(rate(oto_content_request_duration_seconds_bucket[5m])) by (le, route))", "legendFormat": "p95 - {{route}}" },
+        { "expr": "histogram_quantile(0.99, sum(rate(oto_content_request_duration_seconds_bucket[5m])) by (le, route))", "legendFormat": "p99 - {{route}}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "lineWidth": 2 } } }
+    },
+    {
+      "id": 6, "type": "timeseries", "title": "Request Rate (req/min)",
+      "gridPos": { "x": 0, "y": 12, "w": 12, "h": 8 },
+      "targets": [
+        { "expr": "sum(rate(oto_content_requests_total[1m])) * 60", "legendFormat": "Content Service" },
+        { "expr": "sum(rate(oto_auth_requests_total[1m])) * 60", "legendFormat": "Auth Service" },
+        { "expr": "sum(rate(oto_watchlist_requests_total[1m])) * 60", "legendFormat": "Watchlist Service" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqpm", "custom": { "lineWidth": 2 } } }
+    },
+    {
+      "id": 7, "type": "timeseries", "title": "Node.js Memory Usage",
+      "gridPos": { "x": 12, "y": 12, "w": 12, "h": 8 },
+      "targets": [
+        { "expr": "oto_content_nodejs_heap_size_used_bytes", "legendFormat": "Content Heap Used" },
+        { "expr": "oto_auth_nodejs_heap_size_used_bytes", "legendFormat": "Auth Heap Used" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "bytes", "custom": { "lineWidth": 2 } } }
+    }
+  ]
+}

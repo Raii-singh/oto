@@ -1,0 +1,315 @@
+# ── Secrets (base64-encoded values) ──────────────────────
+# Run: kubectl create secret generic oto-secrets --from-env-file=.env -n oto
+# Or apply this template after replacing values
+apiVersion: v1
+kind: Secret
+metadata:
+  name: oto-secrets
+  namespace: oto
+type: Opaque
+stringData:
+  OMDB_API_KEY: "bec831df"
+  TMDB_API_KEY: ""
+  JWT_SECRET: "oto_super_secret_jwt_key_change_in_production"
+  DB_USER: "oto"
+  DB_PASSWORD: "otopassword"
+---
+# ── Content Service ───────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: content-service
+  namespace: oto
+  labels:
+    app: content-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: content-service
+  template:
+    metadata:
+      labels:
+        app: content-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3001"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: content-service
+          image: ghcr.io/raii-singh/otowire-content:latest
+          ports:
+            - containerPort: 3001
+          env:
+            - name: PORT
+              value: "3001"
+            - name: CONTENT_API_PROVIDER
+              value: "omdb"
+            - name: REDIS_URL
+              value: "redis://redis:6379"
+            - name: OMDB_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: oto-secrets
+                  key: OMDB_API_KEY
+            - name: TMDB_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: oto-secrets
+                  key: TMDB_API_KEY
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3001
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3001
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests: { memory: "128Mi", cpu: "100m" }
+            limits: { memory: "256Mi", cpu: "500m" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: content-service
+  namespace: oto
+spec:
+  selector:
+    app: content-service
+  ports:
+    - port: 3001
+      targetPort: 3001
+---
+# ── Auth Service ──────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+  namespace: oto
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3002"
+    spec:
+      containers:
+        - name: auth-service
+          image: ghcr.io/raii-singh/otowire-auth:latest
+          ports:
+            - containerPort: 3002
+          env:
+            - name: PORT
+              value: "3002"
+            - name: DB_HOST
+              value: "postgres"
+            - name: DB_NAME
+              value: "otowire"
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: oto-secrets
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: oto-secrets
+                  key: DB_PASSWORD
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: oto-secrets
+                  key: JWT_SECRET
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3002
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          resources:
+            requests: { memory: "128Mi", cpu: "100m" }
+            limits: { memory: "256Mi", cpu: "500m" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  namespace: oto
+spec:
+  selector:
+    app: auth-service
+  ports:
+    - port: 3002
+      targetPort: 3002
+---
+# ── Watchlist Service ─────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: watchlist-service
+  namespace: oto
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: watchlist-service
+  template:
+    metadata:
+      labels:
+        app: watchlist-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3003"
+    spec:
+      containers:
+        - name: watchlist-service
+          image: ghcr.io/raii-singh/otowire-watchlist:latest
+          ports:
+            - containerPort: 3003
+          env:
+            - name: PORT
+              value: "3003"
+            - name: DB_HOST
+              value: "postgres"
+            - name: DB_NAME
+              value: "otowire"
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: oto-secrets
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: oto-secrets
+                  key: DB_PASSWORD
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: oto-secrets
+                  key: JWT_SECRET
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3003
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          resources:
+            requests: { memory: "128Mi", cpu: "100m" }
+            limits: { memory: "256Mi", cpu: "500m" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: watchlist-service
+  namespace: oto
+spec:
+  selector:
+    app: watchlist-service
+  ports:
+    - port: 3003
+      targetPort: 3003
+---
+# ── Frontend ──────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: oto
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: ghcr.io/raii-singh/otowire-frontend:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: CONTENT_SERVICE_URL
+              value: "http://content-service:3001"
+            - name: NEXT_PUBLIC_API_BASE_URL
+              value: "http://auth-service:3002"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          resources:
+            requests: { memory: "256Mi", cpu: "200m" }
+            limits: { memory: "512Mi", cpu: "1000m" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: oto
+spec:
+  selector:
+    app: frontend
+  ports:
+    - port: 3000
+      targetPort: 3000
+---
+# ── Ingress (NGINX) ───────────────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: oto-ingress
+  namespace: oto
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/rate-limit: "60"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: otowire.example.com
+      http:
+        paths:
+          - path: /api/content
+            pathType: Prefix
+            backend:
+              service:
+                name: content-service
+                port:
+                  number: 3001
+          - path: /api/auth
+            pathType: Prefix
+            backend:
+              service:
+                name: auth-service
+                port:
+                  number: 3002
+          - path: /api/watchlist
+            pathType: Prefix
+            backend:
+              service:
+                name: watchlist-service
+                port:
+                  number: 3003
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000
