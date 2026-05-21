@@ -44,7 +44,7 @@ const transform = (item: OMDbItem): OTOContent | null => {
     language: item.Language?.split(',')[0]?.trim() || 'English',
     description: item.Plot !== 'N/A' ? item.Plot : '',
     poster: item.Poster !== 'N/A' ? item.Poster : FALLBACK_POSTER,
-    backdrop: FALLBACK_BACKDROP, // OMDb doesn't provide backdrops
+    backdrop: item.Poster !== 'N/A' ? item.Poster : FALLBACK_BACKDROP, // Use poster as backdrop (OMDb has no backdrop)
     redirectUrl: buildRedirectUrl(platform, item.Title),
     featured: parseFloat(item.imdbRating) >= 7.5,
   };

@@ -1,0 +1,249 @@
+╔══════════════════════════════════════════════════════════════════╗
+║          OTOwire-Lite — Developer Help & Command Reference        ║
+║          Project: OTT Aggregator (DevOps + Cloud Project)        ║
+╚══════════════════════════════════════════════════════════════════╝
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  1. FIRST TIME SETUP (run once after cloning)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Step 1 — Install frontend deps:
+  cd frontend
+  npm install
+  cd ..
+
+Step 2 — Install each service deps:
+  cd services/content-service  && npm install && cd ../..
+  cd services/auth-service     && npm install && cd ../..
+  cd services/watchlist-service && npm install && cd ../..
+
+Step 3 — Build Docker images (takes ~5 mins first time):
+  docker compose build
+
+Step 4 — Start everything:
+  docker compose up -d
+
+Step 5 — Verify all 9 containers are running:
+  docker ps
+
+  You should see: oto-nginx, oto-frontend, oto-content,
+                  oto-auth, oto-watchlist, oto-postgres,
+                  oto-redis, oto-prometheus, oto-grafana
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  2. DAILY START (after restarting your PC)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Open Docker Desktop and wait for it to fully start (whale icon = green)
+
+2. Open PowerShell / Terminal:
+   cd r:\WTF\Projects\OTO
+
+3. Start all containers:
+   docker compose up -d
+
+4. Wait ~30 seconds, then check health:
+   docker ps
+
+5. Open browser:
+   http://localhost         → Main App (via NGINX)
+   http://localhost:3000    → Frontend direct
+   http://localhost:3001/health → Content Service
+   http://localhost:3002/health → Auth Service
+   http://localhost:3003/health → Watchlist Service
+   http://localhost:9090    → Prometheus (metrics)
+   http://localhost:3030    → Grafana (dashboards)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  3. STOP THE PROJECT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Stop all containers (keeps data):
+  docker compose stop
+
+Stop and remove containers (keeps data volumes):
+  docker compose down
+
+Stop and remove EVERYTHING including database data:
+  docker compose down -v    ← WARNING: deletes all user accounts!
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  4. RUN FRONTEND IN DEV MODE (hot reload for coding)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+NOTE: First stop the Docker frontend container to free port 3000:
+  docker compose stop frontend
+
+Then run dev server:
+  cd r:\WTF\Projects\OTO\frontend
+  npm run dev
+
+Access at: http://localhost:3000
+(Content service must still be running in Docker on :3001)
+
+To go back to Docker mode:
+  docker compose up -d frontend
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  5. REBUILD AFTER CODE CHANGES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Rebuild a single service (e.g. content-service):
+  docker compose build content-service
+  docker compose up -d content-service
+
+Rebuild everything:
+  docker compose build
+  docker compose up -d
+
+Check logs of a service:
+  docker logs oto-content   --tail 50
+  docker logs oto-auth      --tail 50
+  docker logs oto-watchlist --tail 50
+  docker logs oto-frontend  --tail 50
+  docker logs oto-postgres  --tail 30
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  6. AUTHENTICATION — CREATE ACCOUNT & LOGIN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+There is NO default admin account. Create your own:
+
+Method 1 — Via the App UI:
+  1. Go to http://localhost
+  2. Click top-right user icon → "Join Free"
+  3. Fill: Name, Email, Password (min 8 chars, must have 1 UPPERCASE + 1 NUMBER)
+  4. Click "Create Free Account"
+  5. You are now logged in → JWT stored in browser localStorage
+
+Method 2 — Via API (PowerShell):
+  Invoke-RestMethod "http://localhost:3002/auth/signup" `
+    -Method POST `
+    -Body (@{name="Admin";email="admin@oto.dev";password="Admin1234"} | ConvertTo-Json) `
+    -ContentType "application/json"
+
+Method 3 — Via curl:
+  curl -X POST http://localhost:3002/auth/signup \
+    -H "Content-Type: application/json" \
+    -d '{"name":"Admin","email":"admin@oto.dev","password":"Admin1234"}'
+
+Login via API:
+  Invoke-RestMethod "http://localhost:3002/auth/login" `
+    -Method POST `
+    -Body (@{email="admin@oto.dev";password="Admin1234"} | ConvertTo-Json) `
+    -ContentType "application/json"
+
+Password rules:
+  - Minimum 8 characters
+  - At least 1 UPPERCASE letter
+  - At least 1 NUMBER
+  - Example valid password: "MyPass123"
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  7. GRAFANA DASHBOARD LOGIN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+URL:      http://localhost:3030
+Username: admin
+Password: oto_grafana
+
+Inside Grafana:
+  - Go to Dashboards → "OTOwire-Lite — Services Overview"
+  - See: request counts, cache hit rate, API latency, memory
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  8. USEFUL API ENDPOINTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Content Service (http://localhost:3001):
+  GET /health                 → Health check
+  GET /content/trending       → 12 trending movies/shows from OMDb
+  GET /content/search?q=RRR  → Search content
+  GET /content/tt1375666     → Get content by IMDb ID
+  GET /metrics               → Prometheus metrics
+
+Auth Service (http://localhost:3002):
+  POST /auth/signup           → Create account
+  POST /auth/login            → Login, get JWT token
+  GET  /health                → Health check
+
+Watchlist Service (http://localhost:3003):
+  GET    /watchlist           → Get your watchlist (needs JWT)
+  POST   /watchlist           → Add item (needs JWT)
+  DELETE /watchlist/:id       → Remove item (needs JWT)
+  GET    /health              → Health check
+
+Frontend API Proxy (http://localhost:3000):
+  GET /api/trending           → Proxies to content-service
+  GET /api/search?q=term      → Proxies to content-service
+  GET /api/content/:id        → Proxies to content-service
+  POST /api/auth/signup       → Proxies to auth-service
+  POST /api/auth/login        → Proxies to auth-service
+  GET /api/watchlist          → Proxies to watchlist-service
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  9. GIT & GITHUB COMMANDS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Push your latest changes to GitHub:
+  cd r:\WTF\Projects\OTO
+  git add .
+  git commit -m "your message here"
+  git push origin master:main
+
+Check commit history:
+  git log --oneline
+
+See what files changed:
+  git status
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  10. TROUBLESHOOTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Container keeps restarting:
+  docker logs oto-content   ← check error message
+
+Port already in use error:
+  netstat -ano | findstr :3001
+  taskkill /PID <PID_NUMBER> /F
+
+Reset entire database (WARNING: deletes all users):
+  docker compose down -v
+  docker compose up -d
+
+Content not loading on home page:
+  → Wait 30 seconds after starting (Redis/Postgres need to init)
+  → Check: http://localhost:3001/health
+
+Can't login / signup:
+  → Check auth service: http://localhost:3002/health
+  → Password must have uppercase + number (e.g. "Test1234")
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  11. PROJECT STRUCTURE OVERVIEW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+OTO/
+├── frontend/               Next.js 15 app (UI)
+├── services/
+│   ├── content-service/    OMDb/TMDB API + Redis cache  :3001
+│   ├── auth-service/       JWT + bcrypt + PostgreSQL    :3002
+│   └── watchlist-service/  User watchlist + PostgreSQL  :3003
+├── infra/
+│   ├── nginx/              Reverse proxy config
+│   ├── docker/             PostgreSQL init SQL
+│   ├── monitoring/         Prometheus + Grafana config
+│   ├── k8s/                Kubernetes manifests
+│   └── aws/                Terraform for AWS deployment
+├── docker-compose.yml      Orchestrates all 9 services
+└── .env                    Environment variables
